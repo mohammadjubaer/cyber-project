@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+        }
+        h1 { text-align: center; color: #1e3c72; margin-bottom: 0.5rem; }
+        p.subtitle { text-align: center; color: #666; margin-bottom: 2rem; }
+        
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        textarea:focus { outline: none; border-color: #2a5298; }
+        
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+        button:hover { background: #1e3c72; }
+        
+        .result-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+        }
+        .safe { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .agg { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        
+        .bar-container {
+            background: #eee;
+            height: 12px;
+            border-radius: 6px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .bar { height: 100%; transition: width 0.5s ease-in-out; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ CyberGuard AI</h1>
+        <p class="subtitle">Enter a message to check for aggression</p>
+        
+        <textarea id="inputText" placeholder="Type something here..."></textarea>
+        <button onclick="predict()">Analyze Text</button>
+        
+        <div id="resultBox" class="result-box">
+            <h2 id="resultTitle"></h2>
+            <div class="bar-container">
+                <div id="probBar" class="bar"></div>
+            </div>
+            <p>Aggression Confidence: <strong id="confScore"></strong></p>
+        </div>
+    </div>
+
+    <script>
+        async function predict() {
+            const text = document.getElementById('inputText').value;
+            if(!text) return;
+            
+            const btn = document.querySelector('button');
+            btn.innerText = "Analyzing...";
+            
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text})
+                });
+                const res = await response.json();
+                
+                if(res.success) {
+                    const data = res.data;
+                    const box = document.getElementById('resultBox');
+                    const bar = document.getElementById('probBar');
+                    
+                    box.style.display = 'block';
+                    box.className = 'result-box ' + (data.is_aggressive ? 'agg' : 'safe');
+                    
+                    document.getElementById('resultTitle').innerText = data.is_aggressive ? "⚠️ AGGRESSIVE" : "✅ SAFE";
+                    document.getElementById('confScore').innerText = data.probabilities.aggressive + "%";
+                    
+                    bar.style.width = data.probabilities.aggressive + "%";
+                    bar.style.background = data.is_aggressive ? "#dc3545" : "#28a745";
+                }
+            } catch(e) {
+                alert("Error connecting to server.");
+            }
+            btn.innerText = "Analyze Text";
+        }
+    </script>
+</body>
+</html>
